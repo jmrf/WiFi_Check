@@ -1,4 +1,6 @@
 #!/bin/bash
+
+
 ##################################################################
 # A Project of TNET Services, Inc
 #
@@ -61,21 +63,29 @@ fi
 #echo "Setting Lockfile"
 echo $$ > $lockfile
 
+sudo rfkill unblock wifi; sudo rfkill unblock all
+
 # We can perform check
 echo "Performing Network check for $wlan"
 /bin/ping -c 2 -I $wlan $pingip > /dev/null 2> /dev/null
 if [ $? -ge 1 ] ; then
     echo "Network connection down! Attempting reconnection."
-    /sbin/ifdown $wlan
+    /sbin/ifdown $wlan || {
+        echo "Trying ifconfig $wlan up";
+        ifconfig $wlan up
+    };
     /bin/sleep 5
-    /sbin/ifup --force $wlan
+    /sbin/ifup --force $wlan || {
+        echo "Trying ifconfig $wlan up";
+        ifconfig $wlan up
+    };
 else
     echo "Network is Okay"
 fi
 
 echo
 echo "Current Setting:"
-/sbin/ifconfig $wlan | grep "inet addr:"
+/sbin/ifconfig $wlan | grep "inet"
 echo
 
 # Check is complete, Remove Lock file and exit
@@ -86,3 +96,15 @@ exit 0
 ##################################################################
 # End of Script
 ##################################################################
+
+
+
+# while true ; do
+#    if ifconfig wlan0 | grep -q "inet" ; then
+#   sleep 60
+#    else
+#   echo "Network connection down! Attempting reconnection."
+#   ifup --force wlan0
+#   sleep 10
+#    fi
+# done
